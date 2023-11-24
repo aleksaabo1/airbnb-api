@@ -139,7 +139,7 @@ function getRandomImage(id: number): string | null {
     const urls = imageUrls[id];
     if (urls && urls.length > 0) {
         // Assuming your server host and port are constant, replace with actual values
-        const serverHost = 'http://localhost:3001';
+        const serverHost = 'https://bj2ymyvrfp.eu-west-2.awsapprunner.com';
         const firstImageUrl = urls[0]; // Get the first image URL
         const filename = firstImageUrl.split('/').pop()?.split('?')[0];
         if (filename) {
@@ -750,7 +750,7 @@ app.post('/api/notify', async (req, res) => {
     const notificationPayload = JSON.stringify({
         title: 'Reminder of Booking',
         body: 'This is a reminder of your booking at Beachfront Villa on december 1st to december 7th',
-        icon: 'http://localhost:3001/images/airbnb-logo.png',
+        icon: 'https://bj2ymyvrfp.eu-west-2.awsapprunner.com/images/airbnb-logo.png',
         data: {
             url: 'url_to_open_on_click'
         }
