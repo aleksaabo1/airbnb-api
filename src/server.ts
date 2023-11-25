@@ -696,6 +696,8 @@ app.get('/rentals/hosts/:id', (req, res) => {
 });
 
 
+
+
 function urlBase64ToUint8Array(base64String: string) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding)
@@ -773,12 +775,91 @@ app.post('/api/notify', async (req, res) => {
 });
 
 
+
+app.post('/api/notify/booking', async (req, res) => {
+    const { startDate, endDate } = req.body; // Assuming these are provided in the request body
+
+    // Format the dates as needed
+    const formattedStartDate = startDate.slice(5, 10).replace('-', '/');
+    const formattedEndDate = endDate.slice(5, 10).replace('-', '/');
+
+    const notificationPayload = JSON.stringify({
+        title: 'Booking Confirmation',
+        body: `Your booking has been confirmed. We look forward to seeing you on ${formattedStartDate} to ${formattedEndDate}`,
+        icon: 'https://bj2ymyvrfp.eu-west-2.awsapprunner.com/images/airbnb-logo.png',
+        data: {
+            url: req.body.url
+        }
+    });
+
+    const sendNotificationPromises = subscriptions.map(subscription =>
+        webpush.sendNotification(subscription, notificationPayload).catch(err => {
+            console.error('Error sending notification:', err);
+            return err;
+        })
+    );
+
+    try {
+        await Promise.all(sendNotificationPromises);
+        res.status(200).json({ message: 'Notifications sent successfully.' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to send some notifications', details: error });
+    }
+});
+
+
 app.post('/api/subscribe', (req, res) => {
     const subscription: PushSubscription = req.body;
     subscriptions.push(subscription);
     console.log(subscriptions);
     res.status(200).json({ message: 'Subscription added successfully.' });
 });
+
+interface Booking {
+    id: number;
+    name: string;
+    startDate: string;
+    endDate: string;
+    url: string;
+}
+
+const bookings: Booking[] = [];
+
+// Endpoint to create a booking
+app.post('/booking', (req: Request, res: Response) => {
+    const newBooking: Booking = {
+        id: bookings.length + 1,
+        name: req.body.name,
+        startDate: req.body.startDate,
+        endDate: req.body.endDate,
+        url: req.body.url
+    };
+
+    bookings.push(newBooking);
+    res.status(201).json(newBooking);
+});
+
+// Endpoint to retrieve a booking by ID
+app.get('/booking/:id', (req: Request, res: Response) => {
+    const booking = bookings.find(b => b.id === parseInt(req.params.id));
+
+    if (booking) {
+        res.json(booking);
+    } else {
+        res.status(404).send('Booking not found');
+    }
+});
+
+// Endpoint to retrieve a booking by ID
+app.get('/bookings', (req: Request, res: Response) => {
+
+    if (bookings) {
+        res.json(bookings);
+    } else {
+        res.status(404).send('Booking not found');
+    }
+});
+
 
 
 app.listen(PORT, () => {
